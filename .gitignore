@@ -1,3 +1,11 @@
+datasets/*
+*.pt
+wandb/*
+runs/*
+logs/*
+models/*
+results/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
