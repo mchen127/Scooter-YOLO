@@ -1,10 +1,23 @@
 datasets/*
+YOLO-Taiwan-Traffic/*
 *.pt
 wandb/*
 runs/*
 logs/*
 models/*
 results/*
+*/images/
+*/labels/
+*/train/
+*/val/
+*/test/ 
+*.jpg
+*.png
+*.jpeg
+*.JPG
+*.PNG
+*.JPEG
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
