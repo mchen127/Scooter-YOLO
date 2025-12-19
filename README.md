@@ -1,6 +1,6 @@
 # Scooter-YOLO: Training and Evaluation Framework
 
-This repository provides a framework for training and evaluating YOLOv8 models for object detection, with a focus on Transfer Learning (TL) and Continual Learning (CL) strategies. The primary datasets used are the Taiwan Traffic dataset and the COCO dataset.
+This repository provides a framework for training and evaluating YOLO11 models for object detection, with a focus on Transfer Learning (TL) and Continual Learning (CL) strategies. The primary datasets used are the Taiwan Traffic dataset and the COCO dataset.
 
 The framework is designed to experiment with different learning strategies to improve model performance on a specific target domain (Taiwan Traffic) while retaining knowledge from a broader source domain (COCO).
 
@@ -87,21 +87,66 @@ You can override any hyperparameter from `base_config.py` via command-line argum
 
 ### Elastic Weight Consolidation (EWC)
 
-Use `scripts/train_ewc.py` to train using the EWC continual learning method, which helps prevent catastrophic forgetting. This script first calculates parameter importance (Fisher matrix) on the source dataset (COCO) and then uses it as a penalty during training on the target dataset.
+Use `scripts/train_ewc.py` to train using the EWC continual learning method, which helps prevent catastrophic forgetting. This script first calculates parameter importance (Fisher Information Matrix) on the source dataset (COCO traffic subset) and then uses it as a penalty during training on the target dataset.
 
-**Example Command:**
+**How EWC Works:**
+1. Load pretrained YOLO11m weights (trained on COCO)
+2. Compute Fisher Information on COCO traffic subset (measures parameter importance)
+3. Normalize Fisher values (max=1) for stable hyperparameter tuning
+4. Train on Taiwan Traffic with EWC penalty that discourages changing important parameters
+
+**Key Parameters:**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--ewc_lambda` | 100000 | EWC regularization strength. Range: 1e4 (weak) to 1e7 (strong) |
+| `--fisher_samples` | 1000 | Number of samples for Fisher computation. Use `-1` for all samples |
+
+**Lambda Tuning Guide:**
+- `10000` (1e4): Weak regularization - faster adaptation, more forgetting
+- `100000` (1e5): Medium regularization - balanced (default)
+- `1000000` (1e6): Strong regularization - slower adaptation, less forgetting
+
+**Example Commands:**
 ```bash
-python scripts/train_ewc.py --ewc_lambda 2000.0 --epochs 50
+# Basic EWC training (default lambda=100000)
+python scripts/train_ewc.py --epochs 50
+
+# Stronger regularization (preserves more COCO knowledge)
+python scripts/train_ewc.py --ewc_lambda 1000000 --epochs 50
+
+# Weaker regularization (faster adaptation to Taiwan dataset)
+python scripts/train_ewc.py --ewc_lambda 10000 --epochs 50
+
+# Use all COCO subset samples for most accurate Fisher estimation
+python scripts/train_ewc.py --fisher_samples -1 --epochs 50
 ```
-The `--ewc_lambda` parameter controls the strength of the EWC regularization.
 
 ## Evaluation
 
-Use `scripts/evaluate.py` to evaluate a trained model's performance on multiple datasets simultaneously. The script will print a summary table and is useful for a final assessment after training.
+Use `scripts/evaluate.py` to evaluate a trained model's performance on multiple datasets simultaneously (Taiwan Traffic, COCO Traffic Subset, and optionally full COCO). The script prints a summary table and saves results to a JSON file.
 
-**Example Command:**
+**Features:**
+- Evaluates on Taiwan Traffic (target domain) and COCO subset (source domain)
+- Saves results to JSON file (default: `results/all_results.json`)
+- Supports evaluating multiple models and appending to the same results file
+
+**Example Commands:**
 ```bash
-python scripts/evaluate.py --model runs/detect/tl1_baseline_lr0.001/weights/best.pt
+# Evaluate a single model
+python scripts/evaluate.py --model YOLO-Taiwan-Traffic/tl1_baseline_lr0.001/weights/best.pt
+
+# Evaluate multiple models (results are appended to the same file)
+python scripts/evaluate.py --model YOLO-Taiwan-Traffic/ewc_lambda100.0_lr0.0003/weights/best.pt
+
+# Use custom output file
+python scripts/evaluate.py --model path/to/best.pt --output results/my_results.json
+```
+
+**Batch Evaluation:**
+Use `run_eval_all.sh` to evaluate all models in the `YOLO-Taiwan-Traffic/` directory:
+```bash
+bash run_eval_all.sh
 ```
 
 ## Results and Logging

@@ -46,6 +46,16 @@ def on_fit_epoch_end(trainer):
                     "metrics/cocosubset_mAP50": map50,
                 }
             )
+
+        # Explicitly log to WandB if active
+        if wandb.run:
+            wandb.log(
+                {
+                    "metrics/cocosubset_mAP50-95": map50_95,
+                    "metrics/cocosubset_mAP50": map50,
+                },
+                commit=False,
+            )
         else:
             # Fallback for safety (though trainer.metrics should exist)
             print(

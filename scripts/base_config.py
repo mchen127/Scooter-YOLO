@@ -16,19 +16,26 @@ class BaseConfig:
     # Training Hyperparameters
     epochs: int = 30
     batch: int = 32
-    lr0: float = 0.01
+    lr0: float = 0.0003
     device: str = "0"
     patience: int = 5
     optimizer: str = "SGD"  # Force SGD for consistency
     seed: int = 42  # Random seed for reproducibility
 
     # Performance
-    workers: int = 20
+    workers: int = 64
     cache: bool = True  # Cache images in RAM for speed
     amp: bool = True  # Automatic Mixed Precision (True by default)
 
     # Evaluation
     eval_freq: int = 1  # Run COCO subset eval every N epochs
+
+    # EWC (Elastic Weight Consolidation)
+    # Fisher values are normalized (max=1), so lambda needs to be high (1e4-1e7)
+    ewc_lambda: float = 100000.0  # EWC regularization strength
+    fisher_samples: int = (
+        1000  # Number of samples for Fisher computation (-1 = use all)
+    )
 
     # Logging
     project: str = "YOLO-Taiwan-Traffic"
